@@ -7,3 +7,4 @@ edition = "2024"
 clap = { version = "4", features = ["derive"] }
 anyhow = "1"
 libloading = "0.9"
+image = "0.25"

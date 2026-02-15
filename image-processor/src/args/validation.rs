@@ -2,11 +2,26 @@ pub(crate) fn validate_args(
     args: &crate::args::Args,
     default_plugin_directory: &std::path::Path,
     lib_extension: &str,
+    supported_image_formats: &[&str],
 ) -> Result<(), anyhow::Error> {
     if !args.input.exists() {
         return Err(anyhow::anyhow!(
             "input file '{}' does not exist",
             args.input.display()
+        ));
+    }
+    if !is_supported_image_format(supported_image_formats, &args.input) {
+        return Err(anyhow::anyhow!(
+            "input file '{}' is not a supported image format (supported formats: {:?})",
+            args.input.display(),
+            supported_image_formats
+        ));
+    }
+    if !is_supported_image_format(supported_image_formats, &args.output) {
+        return Err(anyhow::anyhow!(
+            "output file '{}' is not a supported image format (supported formats: {:?})",
+            args.output.display(),
+            supported_image_formats
         ));
     }
     if args.plugin.is_empty() {
@@ -18,7 +33,7 @@ pub(crate) fn validate_args(
             args.params.display()
         ));
     }
-    let plugin_directory = if let Some(plugin_directory) = &args.plugin_path {
+    if let Some(plugin_directory) = &args.plugin_path {
         if !plugin_directory.exists() {
             return Err(anyhow::anyhow!(
                 "plugin directory '{}' does not exist",
@@ -31,7 +46,6 @@ pub(crate) fn validate_args(
                 plugin_directory.display()
             ));
         }
-        plugin_directory
     } else {
         if !default_plugin_directory.exists() {
             return Err(anyhow::anyhow!(
@@ -45,31 +59,27 @@ pub(crate) fn validate_args(
                 default_plugin_directory.display()
             ));
         }
-        default_plugin_directory
     };
-    if args.plugin.ends_with(lib_extension) {
-        validate_plugin_exists(plugin_directory, &args.plugin)?;
-    } else {
-        validate_plugin_exists(
-            plugin_directory,
-            &format!("{}.{}", args.plugin, lib_extension),
-        )?;
+    let plugin_path = args.plugin_path(default_plugin_directory, lib_extension);
+    if !plugin_path.exists() {
+        return Err(anyhow::anyhow!(
+            "plugin '{}' does not exist",
+            plugin_path.display()
+        ));
     }
 
     Ok(())
 }
 
-fn validate_plugin_exists(
-    plugin_directory: &std::path::Path,
-    plugin_name: &str,
-) -> Result<(), anyhow::Error> {
-    let path = plugin_directory.join(plugin_name);
-    if !path.exists() {
-        return Err(anyhow::anyhow!(
-            "plugin '{}' does not exist in directory '{}'",
-            plugin_name,
-            plugin_directory.display()
-        ));
-    }
-    Ok(())
+fn is_supported_image_format(
+    supported_image_formats: &[&str],
+    image_path: &std::path::Path,
+) -> bool {
+    supported_image_formats.contains(
+        &image_path
+            .extension()
+            .unwrap_or_default()
+            .to_str()
+            .unwrap_or(""),
+    )
 }

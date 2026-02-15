@@ -24,3 +24,23 @@ pub struct Args {
     #[clap(long)]
     pub plugin_path: Option<std::path::PathBuf>,
 }
+
+impl Args {
+    pub fn plugin_path(
+        &self,
+        default_plugin_directory: &std::path::Path,
+        lib_extension: &str,
+    ) -> std::path::PathBuf {
+        let plugin_name = if self.plugin.ends_with(lib_extension) {
+            self.plugin.clone()
+        } else {
+            format!("{}.{}", self.plugin, lib_extension)
+        };
+
+        let plugin_directory = self
+            .plugin_path
+            .as_deref()
+            .unwrap_or(default_plugin_directory);
+        plugin_directory.join(plugin_name)
+    }
+}

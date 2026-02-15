@@ -1,10 +1,10 @@
 use libloading::{Library, Symbol};
-use std::ffi::CString;
+use std::ffi::c_char;
 
 pub struct PluginInterface<'a> {
     pub process_image: Symbol<
         'a,
-        extern "C" fn(width: u32, height: u32, rgb_data: *mut u8, params: *const CString),
+        extern "C" fn(width: u32, height: u32, rgb_data: *mut u8, params: *const c_char),
     >,
 }
 

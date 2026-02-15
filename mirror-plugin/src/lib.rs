@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+use std::ffi::c_char;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+#[unsafe(no_mangle)]
+extern "C" fn process_image(width: u32, height: u32, rgb_data: *mut u8, params: *const c_char) {
+    if width == 0 || height == 0 || params.is_null() || rgb_data.is_null() {
+        return;
     }
+    let image =
+        unsafe { core::slice::from_raw_parts_mut(rgb_data, width as usize * height as usize * 4) };
+    image.reverse();
 }
