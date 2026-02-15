@@ -1,7 +1,0 @@
-[package]
-name = "plugin-interface"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-libloading = "0.9"

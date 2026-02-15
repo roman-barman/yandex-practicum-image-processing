@@ -1,5 +1,6 @@
 use clap::Parser;
 mod args;
+mod plugin_loader;
 
 #[cfg(target_os = "linux")]
 const LIB_EXTENSION: &str = "so";
