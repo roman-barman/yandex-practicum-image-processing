@@ -16,9 +16,7 @@ extern "C" fn process_image(width: u32, height: u32, rgb_data: *mut u8, params: 
     if radius == 0 || iterations == 0 {
         return;
     }
-    for _ in 0..iterations {
-        blur_rgba(image, width as usize, height as usize, radius);
-    }
+    blur_rgba(image, width as usize, height as usize, radius, iterations);
 }
 
 fn parse_params(params: &str) -> (usize, usize) {
@@ -46,44 +44,73 @@ fn parse_params(params: &str) -> (usize, usize) {
     (radius, iterations)
 }
 
-fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize) {
+fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterations: usize) {
     let max_radius = width.saturating_sub(1).max(height.saturating_sub(1));
     let radius = radius.min(max_radius);
     if radius == 0 {
         return;
     }
-
-    let mut out = vec![0u8; buf.len()];
     let stride = width * PIXEL_SIZE;
 
-    for y in 0..height {
-        let y0 = y.saturating_sub(radius);
-        let y1 = (y + radius).min(height - 1);
-        for x in 0..width {
-            let x0 = x.saturating_sub(radius);
-            let x1 = (x + radius).min(width - 1);
+    for _ in 0..iterations {
+        let mut out = vec![0u8; buf.len()];
+        for y in 0..height {
+            let y0 = y.saturating_sub(radius);
+            let y1 = (y + radius).min(height - 1);
+            for x in 0..width {
+                let x0 = x.saturating_sub(radius);
+                let x1 = (x + radius).min(width - 1);
 
-            let mut sum = [0u32; 4];
-            let mut count = 0u32;
-            for yy in y0..=y1 {
-                let row = yy * stride;
-                for xx in x0..=x1 {
-                    let idx = row + xx * PIXEL_SIZE;
-                    sum[0] += buf[idx] as u32;
-                    sum[1] += buf[idx + 1] as u32;
-                    sum[2] += buf[idx + 2] as u32;
-                    sum[3] += buf[idx + 3] as u32;
-                    count += 1;
+                let mut sum = [0u32; 4];
+                let mut count = 0u32;
+                for yy in y0..=y1 {
+                    let row = yy * stride;
+                    for xx in x0..=x1 {
+                        let idx = row + xx * PIXEL_SIZE;
+                        sum[0] += buf[idx] as u32;
+                        sum[1] += buf[idx + 1] as u32;
+                        sum[2] += buf[idx + 2] as u32;
+                        sum[3] += buf[idx + 3] as u32;
+                        count += 1;
+                    }
                 }
-            }
 
-            let out_idx = y * stride + x * PIXEL_SIZE;
-            out[out_idx] = (sum[0] / count) as u8;
-            out[out_idx + 1] = (sum[1] / count) as u8;
-            out[out_idx + 2] = (sum[2] / count) as u8;
-            out[out_idx + 3] = (sum[3] / count) as u8;
+                let out_idx = y * stride + x * PIXEL_SIZE;
+                out[out_idx] = (sum[0] / count) as u8;
+                out[out_idx + 1] = (sum[1] / count) as u8;
+                out[out_idx + 2] = (sum[2] / count) as u8;
+                out[out_idx + 3] = (sum[3] / count) as u8;
+            }
         }
+        buf.copy_from_slice(&out);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{blur_rgba, parse_params};
+
+    #[test]
+    fn parse_params_test() {
+        assert_eq!(parse_params(""), (0, 0));
+        assert_eq!(parse_params("radius=1"), (1, 0));
+        assert_eq!(parse_params("radius=1;iterations=2"), (1, 2));
+        assert_eq!(parse_params("iterations=2"), (0, 2));
     }
 
-    buf.copy_from_slice(&out);
+    #[test]
+    fn blur_test() {
+        let mut buf = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
+        ];
+        blur_rgba(&mut buf, 3, 3, 2, 2);
+        assert_eq!(
+            buf,
+            [
+                17, 18, 19, 20, 17, 18, 19, 20, 17, 18, 19, 20, 17, 18, 19, 20, 17, 18, 19, 20, 17,
+                18, 19, 20, 17, 18, 19, 20, 17, 18, 19, 20, 17, 18, 19, 20
+            ]
+        );
+    }
 }
