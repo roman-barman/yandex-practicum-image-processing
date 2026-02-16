@@ -1,4 +1,3 @@
-use anyhow::Context;
 use clap::Parser;
 use std::ffi::CString;
 mod args;
@@ -27,17 +26,18 @@ fn main() -> anyhow::Result<()> {
             .to_str()
             .ok_or(anyhow::anyhow!("plugin path is not valid"))?,
     )
-    .context("failed to load plugin")?;
+    .map_err(|_| anyhow::anyhow!("failed to load plugin"))?;
     let plugin = plugin
         .interface()
-        .context("failed to load plugin interface")?;
+        .map_err(|_| anyhow::anyhow!("failed to load plugin interface"))?;
 
     let mut image = image::open(&args.input)
-        .context("failed to open input image")?
+        .map_err(|_| anyhow::anyhow!("failed to open input image"))?
         .to_rgba8();
-    let params =
-        std::fs::read_to_string(&args.params).context("failed to read plugin parameters")?;
-    let params = CString::new(params).context("failed to convert plugin parameters to CString")?;
+    let params = std::fs::read_to_string(&args.params)
+        .map_err(|_| anyhow::anyhow!("failed to read plugin parameters"))?;
+    let params = CString::new(params)
+        .map_err(|_| anyhow::anyhow!("failed to convert plugin parameters to CString"))?;
 
     (plugin.process_image)(
         image.width(),
@@ -48,7 +48,7 @@ fn main() -> anyhow::Result<()> {
 
     image
         .save(&args.output)
-        .context("failed to save output image")?;
+        .map_err(|_| anyhow::anyhow!("failed to save output image"))?;
 
     Ok(())
 }
