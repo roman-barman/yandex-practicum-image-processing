@@ -1,14 +1,89 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+use std::ffi::{CStr, c_char};
+
+const PIXEL_SIZE: usize = 4;
+
+#[unsafe(no_mangle)]
+extern "C" fn process_image(width: u32, height: u32, rgb_data: *mut u8, params: *const c_char) {
+    if width == 0 || height == 0 || params.is_null() || rgb_data.is_null() {
+        return;
+    }
+    let image = unsafe {
+        core::slice::from_raw_parts_mut(rgb_data, width as usize * height as usize * PIXEL_SIZE)
+    };
+    let params = unsafe { CStr::from_ptr(params) };
+    let params = params.to_str().unwrap_or("");
+    let (radius, iterations) = parse_params(params);
+    if radius == 0 || iterations == 0 {
+        return;
+    }
+    for _ in 0..iterations {
+        blur_rgba(image, width as usize, height as usize, radius);
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+fn parse_params(params: &str) -> (usize, usize) {
+    let trimmed = params.trim();
+    if trimmed.is_empty() {
+        return (0, 0);
     }
+    let params = trimmed.split(';').collect::<Vec<_>>();
+    let radius = match params.iter().find(|param| param.starts_with("radius=")) {
+        Some(value) => value
+            .strip_prefix("radius=")
+            .unwrap_or("0")
+            .parse()
+            .unwrap_or(0),
+        None => 0,
+    };
+    let iterations = match params.iter().find(|param| param.starts_with("iterations=")) {
+        Some(value) => value
+            .strip_prefix("iterations=")
+            .unwrap_or("0")
+            .parse()
+            .unwrap_or(0),
+        None => 0,
+    };
+    (radius, iterations)
+}
+
+fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize) {
+    let max_radius = width.saturating_sub(1).max(height.saturating_sub(1));
+    let radius = radius.min(max_radius);
+    if radius == 0 {
+        return;
+    }
+
+    let mut out = vec![0u8; buf.len()];
+    let stride = width * PIXEL_SIZE;
+
+    for y in 0..height {
+        let y0 = y.saturating_sub(radius);
+        let y1 = (y + radius).min(height - 1);
+        for x in 0..width {
+            let x0 = x.saturating_sub(radius);
+            let x1 = (x + radius).min(width - 1);
+
+            let mut sum = [0u32; 4];
+            let mut count = 0u32;
+            for yy in y0..=y1 {
+                let row = yy * stride;
+                for xx in x0..=x1 {
+                    let idx = row + xx * PIXEL_SIZE;
+                    sum[0] += buf[idx] as u32;
+                    sum[1] += buf[idx + 1] as u32;
+                    sum[2] += buf[idx + 2] as u32;
+                    sum[3] += buf[idx + 3] as u32;
+                    count += 1;
+                }
+            }
+
+            let out_idx = y * stride + x * PIXEL_SIZE;
+            out[out_idx] = (sum[0] / count) as u8;
+            out[out_idx + 1] = (sum[1] / count) as u8;
+            out[out_idx + 2] = (sum[2] / count) as u8;
+            out[out_idx + 3] = (sum[3] / count) as u8;
+        }
+    }
+
+    buf.copy_from_slice(&out);
 }
