@@ -60,6 +60,6 @@ mod test {
     fn vertical_mirror() {
         let mut buf = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
         mirror_vertical_rgba(&mut buf, 2, 2);
-        assert_eq!(buf,  [9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(buf, [9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8]);
     }
 }

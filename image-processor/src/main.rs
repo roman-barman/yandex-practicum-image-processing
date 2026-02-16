@@ -26,7 +26,8 @@ fn main() -> anyhow::Result<()> {
         plugin_path
             .to_str()
             .ok_or(anyhow::anyhow!("plugin path is not valid"))?,
-    ).context("failed to load plugin")?;
+    )
+    .context("failed to load plugin")?;
     let plugin = plugin
         .interface()
         .context("failed to load plugin interface")?;
