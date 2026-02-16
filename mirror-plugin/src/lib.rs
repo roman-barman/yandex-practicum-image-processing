@@ -44,3 +44,22 @@ fn mirror_vertical_rgba(buf: &mut [u8], width: usize, height: usize) {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{mirror_horizontal_rgba, mirror_vertical_rgba};
+
+    #[test]
+    fn horizontal_mirror() {
+        let mut buf = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        mirror_horizontal_rgba(&mut buf, 2, 2);
+        assert_eq!(buf, [5, 6, 7, 8, 1, 2, 3, 4, 13, 14, 15, 16, 9, 10, 11, 12]);
+    }
+
+    #[test]
+    fn vertical_mirror() {
+        let mut buf = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        mirror_vertical_rgba(&mut buf, 2, 2);
+        assert_eq!(buf,  [9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8]);
+    }
+}
