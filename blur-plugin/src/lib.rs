@@ -90,11 +90,18 @@ fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterati
                             Some(idx) => idx,
                             None => return,
                         };
+                        if idx.checked_add(3).is_none() {
+                            return;
+                        }
+
                         sum[0] += buf[idx] as u32;
                         sum[1] += buf[idx + 1] as u32;
                         sum[2] += buf[idx + 2] as u32;
                         sum[3] += buf[idx + 3] as u32;
-                        count += 1;
+                        count = match count.checked_add(1) {
+                            Some(count) => count,
+                            None => return,
+                        };
                     }
                 }
 
@@ -108,6 +115,10 @@ fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterati
                     },
                     None => return,
                 };
+                if out_idx.checked_add(3).is_none() {
+                    return;
+                }
+
                 out[out_idx] = (sum[0] / count) as u8;
                 out[out_idx + 1] = (sum[1] / count) as u8;
                 out[out_idx + 2] = (sum[2] / count) as u8;
