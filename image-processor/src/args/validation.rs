@@ -4,19 +4,6 @@ pub(crate) fn validate_args(
     lib_extension: &str,
     supported_image_formats: &[&str],
 ) -> Result<(), anyhow::Error> {
-    if !args.input.exists() {
-        return Err(anyhow::anyhow!(
-            "input file '{}' does not exist",
-            args.input.display()
-        ));
-    }
-    if !is_supported_image_format(supported_image_formats, &args.input) {
-        return Err(anyhow::anyhow!(
-            "input file '{}' is not a supported image format (supported formats: {:?})",
-            args.input.display(),
-            supported_image_formats
-        ));
-    }
     if !is_supported_image_format(supported_image_formats, &args.output) {
         return Err(anyhow::anyhow!(
             "output file '{}' is not a supported image format (supported formats: {:?})",
