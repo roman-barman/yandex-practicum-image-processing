@@ -7,9 +7,14 @@ extern "C" fn process_image(width: u32, height: u32, rgb_data: *mut u8, params: 
     if width == 0 || height == 0 || params.is_null() || rgb_data.is_null() {
         return;
     }
-    let image = unsafe {
-        core::slice::from_raw_parts_mut(rgb_data, width as usize * height as usize * PIXEL_SIZE)
+    let len = match (width as usize)
+        .checked_mul(height as usize)
+        .and_then(|len| len.checked_mul(PIXEL_SIZE))
+    {
+        Some(len) => len,
+        None => return,
     };
+    let image = unsafe { core::slice::from_raw_parts_mut(rgb_data, len) };
     let params = unsafe { CStr::from_ptr(params) };
     let params = params.to_str().unwrap_or("");
     let (radius, iterations) = parse_params(params);
@@ -78,11 +83,11 @@ fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterati
                         None => return,
                     };
                     for xx in x0..=x1 {
-                        let idx = match xx.checked_mul(PIXEL_SIZE) {
-                            Some(idx) => match row.checked_add(idx) {
-                                Some(idx) => idx,
-                                None => return,
-                            },
+                        let idx = match xx
+                            .checked_mul(PIXEL_SIZE)
+                            .and_then(|idx| idx.checked_add(row))
+                        {
+                            Some(idx) => idx,
                             None => return,
                         };
                         sum[0] += buf[idx] as u32;
@@ -94,11 +99,11 @@ fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterati
                 }
 
                 let out_idx = match y.checked_mul(stride) {
-                    Some(right) => match x.checked_mul(PIXEL_SIZE) {
-                        Some(left) => match right.checked_add(left) {
-                            Some(idx) => idx,
-                            None => return,
-                        },
+                    Some(right) => match x
+                        .checked_mul(PIXEL_SIZE)
+                        .and_then(|left| left.checked_add(right))
+                    {
+                        Some(idx) => idx,
                         None => return,
                     },
                     None => return,
