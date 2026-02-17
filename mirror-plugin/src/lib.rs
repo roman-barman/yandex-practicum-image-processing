@@ -3,7 +3,12 @@ use std::ffi::{CStr, c_char};
 const PIXEL_SIZE: usize = 4;
 
 #[unsafe(no_mangle)]
-extern "C" fn process_image(width: u32, height: u32, rgb_data: *mut u8, params: *const c_char) {
+unsafe extern "C" fn process_image(
+    width: u32,
+    height: u32,
+    rgb_data: *mut u8,
+    params: *const c_char,
+) {
     if width == 0 || height == 0 || params.is_null() || rgb_data.is_null() {
         return;
     }

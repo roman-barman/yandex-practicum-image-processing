@@ -39,12 +39,14 @@ fn main() -> anyhow::Result<()> {
     let params = CString::new(params)
         .map_err(|_| anyhow::anyhow!("failed to convert plugin parameters to CString"))?;
 
-    (plugin.process_image)(
-        image.width(),
-        image.height(),
-        image.as_mut_ptr(),
-        params.as_ptr(),
-    );
+    unsafe {
+        (plugin.process_image)(
+            image.width(),
+            image.height(),
+            image.as_mut_ptr(),
+            params.as_ptr(),
+        )
+    };
 
     image
         .save(&args.output)
