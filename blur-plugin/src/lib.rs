@@ -50,23 +50,41 @@ fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterati
     if radius == 0 {
         return;
     }
-    let stride = width * PIXEL_SIZE;
+    let stride = match width.checked_mul(PIXEL_SIZE) {
+        Some(stride) => stride,
+        None => return,
+    };
 
     for _ in 0..iterations {
         let mut out = vec![0u8; buf.len()];
         for y in 0..height {
             let y0 = y.saturating_sub(radius);
-            let y1 = (y + radius).min(height - 1);
+            let y1 = match y.checked_add(radius) {
+                Some(y1) => y1.min(height - 1),
+                None => break,
+            };
             for x in 0..width {
                 let x0 = x.saturating_sub(radius);
-                let x1 = (x + radius).min(width - 1);
+                let x1 = match x.checked_add(radius) {
+                    Some(x1) => x1.min(width - 1),
+                    None => break,
+                };
 
                 let mut sum = [0u32; 4];
                 let mut count = 0u32;
                 for yy in y0..=y1 {
-                    let row = yy * stride;
+                    let row = match yy.checked_mul(stride) {
+                        Some(row) => row,
+                        None => return,
+                    };
                     for xx in x0..=x1 {
-                        let idx = row + xx * PIXEL_SIZE;
+                        let idx = match xx.checked_mul(PIXEL_SIZE) {
+                            Some(idx) => match row.checked_add(idx) {
+                                Some(idx) => idx,
+                                None => return,
+                            },
+                            None => return,
+                        };
                         sum[0] += buf[idx] as u32;
                         sum[1] += buf[idx + 1] as u32;
                         sum[2] += buf[idx + 2] as u32;
@@ -75,7 +93,16 @@ fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterati
                     }
                 }
 
-                let out_idx = y * stride + x * PIXEL_SIZE;
+                let out_idx = match y.checked_mul(stride) {
+                    Some(right) => match x.checked_mul(PIXEL_SIZE) {
+                        Some(left) => match right.checked_add(left) {
+                            Some(idx) => idx,
+                            None => return,
+                        },
+                        None => return,
+                    },
+                    None => return,
+                };
                 out[out_idx] = (sum[0] / count) as u8;
                 out[out_idx + 1] = (sum[1] / count) as u8;
                 out[out_idx + 2] = (sum[2] / count) as u8;
