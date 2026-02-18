@@ -55,11 +55,6 @@ fn parse_params(params: &str) -> (usize, usize) {
 }
 
 fn blur_rgba(buf: &mut [u8], width: usize, height: usize, radius: usize, iterations: usize) {
-    let max_radius = width.saturating_sub(1).max(height.saturating_sub(1));
-    let radius = radius.min(max_radius);
-    if radius == 0 {
-        return;
-    }
     let stride = match width.checked_mul(PIXEL_SIZE) {
         Some(stride) => stride,
         None => return,
