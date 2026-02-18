@@ -3,18 +3,11 @@ use std::ffi::CString;
 mod args;
 mod plugin_loader;
 
-#[cfg(target_os = "linux")]
-const LIB_EXTENSION: &str = "so";
-#[cfg(target_os = "windows")]
-const LIB_EXTENSION: &str = "dll";
-const DEFAULT_PLUGIN_DIRECTORY: &str = "target/debug";
-
 fn main() -> anyhow::Result<()> {
     let args = args::Args::parse();
-    let default_plugin_directory = std::path::Path::new(DEFAULT_PLUGIN_DIRECTORY);
-    args::validation::validate_args(&args, default_plugin_directory, LIB_EXTENSION)?;
+    args::validation::validate_args(&args)?;
 
-    let plugin_path = args.plugin_path(default_plugin_directory, LIB_EXTENSION);
+    let plugin_path = args.plugin_path();
     let plugin = plugin_loader::Plugin::new(
         plugin_path
             .to_str()
@@ -25,10 +18,10 @@ fn main() -> anyhow::Result<()> {
         .interface()
         .map_err(|_| anyhow::anyhow!("failed to load plugin interface"))?;
 
-    let mut image = image::open(&args.input)
+    let mut image = image::open(args.get_input())
         .map_err(|_| anyhow::anyhow!("failed to open input image"))?
         .to_rgba8();
-    let params = std::fs::read_to_string(&args.params)
+    let params = std::fs::read_to_string(args.get_params())
         .map_err(|_| anyhow::anyhow!("failed to read plugin parameters"))?;
     let params = CString::new(params)
         .map_err(|_| anyhow::anyhow!("failed to convert plugin parameters to CString"))?;
@@ -43,7 +36,7 @@ fn main() -> anyhow::Result<()> {
     };
 
     image
-        .save(&args.output)
+        .save(args.get_output())
         .map_err(|_| anyhow::anyhow!("failed to save output image"))?;
 
     Ok(())
