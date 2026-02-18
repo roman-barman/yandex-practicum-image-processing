@@ -15,7 +15,7 @@ pub struct Args {
     pub output: std::path::PathBuf,
 
     /// Plugin name
-    #[clap(long)]
+    #[clap(long, value_parser = parse_plugin_name)]
     pub plugin: String,
 
     /// Plugin parameters file path
@@ -73,6 +73,13 @@ fn parse_output_file_path(path: &str) -> Result<std::path::PathBuf, String> {
         ));
     }
     Ok(path)
+}
+
+fn parse_plugin_name(path: &str) -> Result<String, String> {
+    if path.is_empty() {
+        return Err("plugin name is empty".to_string());
+    }
+    Ok(path.to_string())
 }
 
 fn is_supported_image_format(image_path: &std::path::Path) -> bool {

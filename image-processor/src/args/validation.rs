@@ -3,9 +3,6 @@ pub(crate) fn validate_args(
     default_plugin_directory: &std::path::Path,
     lib_extension: &str,
 ) -> Result<(), anyhow::Error> {
-    if args.plugin.is_empty() {
-        return Err(anyhow::anyhow!("plugin name is empty"));
-    }
     if !args.params.exists() {
         return Err(anyhow::anyhow!(
             "plugin parameters file '{}' does not exist",
