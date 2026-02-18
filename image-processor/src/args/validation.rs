@@ -3,12 +3,6 @@ pub(crate) fn validate_args(
     default_plugin_directory: &std::path::Path,
     lib_extension: &str,
 ) -> Result<(), anyhow::Error> {
-    if !args.params.exists() {
-        return Err(anyhow::anyhow!(
-            "plugin parameters file '{}' does not exist",
-            args.params.display()
-        ));
-    }
     if let Some(plugin_directory) = &args.plugin_path {
         if !plugin_directory.exists() {
             return Err(anyhow::anyhow!(

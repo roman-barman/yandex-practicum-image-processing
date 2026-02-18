@@ -19,7 +19,7 @@ pub struct Args {
     pub plugin: String,
 
     /// Plugin parameters file path
-    #[clap(long)]
+    #[clap(long, value_parser = parse_params_path)]
     pub params: std::path::PathBuf,
 
     /// Plugin directory path
@@ -80,6 +80,17 @@ fn parse_plugin_name(path: &str) -> Result<String, String> {
         return Err("plugin name is empty".to_string());
     }
     Ok(path.to_string())
+}
+
+fn parse_params_path(path: &str) -> Result<std::path::PathBuf, String> {
+    let path = std::path::PathBuf::from(path);
+    if !path.exists() {
+        return Err(format!(
+            "plugin parameters file '{}' does not exist",
+            path.display()
+        ));
+    }
+    Ok(path)
 }
 
 fn is_supported_image_format(image_path: &std::path::Path) -> bool {
