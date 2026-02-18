@@ -3,6 +3,8 @@ use std::ffi::{CStr, c_char};
 const PIXEL_SIZE: usize = 4;
 
 #[unsafe(no_mangle)]
+// Safety: this is an FFI entry point; the caller must pass valid pointers and sizes
+// for an RGBA buffer of width * height pixels and a NUL-terminated params string.
 unsafe extern "C" fn process_image(
     width: u32,
     height: u32,
@@ -19,7 +21,9 @@ unsafe extern "C" fn process_image(
         Some(len) => len,
         None => return,
     };
+    // Safety: caller guarantees rgb_data points to a writable buffer of `len` bytes.
     let image = unsafe { core::slice::from_raw_parts_mut(rgb_data, len) };
+    // Safety: caller guarantees params is a valid NUL-terminated C string.
     let params = unsafe { CStr::from_ptr(params) };
     let params = params.to_str().unwrap_or("");
     match params {

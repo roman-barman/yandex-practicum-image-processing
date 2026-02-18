@@ -26,6 +26,7 @@ fn main() -> anyhow::Result<()> {
     let params = CString::new(params)
         .map_err(|_| anyhow::anyhow!("failed to convert plugin parameters to CString"))?;
 
+    // Safety: plugin is expected to honor the C ABI and not read/write outside the image buffer.
     unsafe {
         (plugin.process_image)(
             image.width(),
