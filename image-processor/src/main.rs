@@ -8,17 +8,11 @@ const LIB_EXTENSION: &str = "so";
 #[cfg(target_os = "windows")]
 const LIB_EXTENSION: &str = "dll";
 const DEFAULT_PLUGIN_DIRECTORY: &str = "target/debug";
-const SUPPORTED_IMAGE_FORMATS: &[&str] = &["png"];
 
 fn main() -> anyhow::Result<()> {
     let args = args::Args::parse();
     let default_plugin_directory = std::path::Path::new(DEFAULT_PLUGIN_DIRECTORY);
-    args::validation::validate_args(
-        &args,
-        default_plugin_directory,
-        LIB_EXTENSION,
-        SUPPORTED_IMAGE_FORMATS,
-    )?;
+    args::validation::validate_args(&args, default_plugin_directory, LIB_EXTENSION)?;
 
     let plugin_path = args.plugin_path(default_plugin_directory, LIB_EXTENSION);
     let plugin = plugin_loader::Plugin::new(

@@ -11,7 +11,7 @@ pub struct Args {
     pub input: std::path::PathBuf,
 
     /// Output image file path
-    #[clap(long)]
+    #[clap(long, value_parser = parse_output_file_path)]
     pub output: std::path::PathBuf,
 
     /// Plugin name
@@ -60,6 +60,18 @@ fn parse_input_file_path(path: &str) -> Result<std::path::PathBuf, String> {
         ));
     }
 
+    Ok(path)
+}
+
+fn parse_output_file_path(path: &str) -> Result<std::path::PathBuf, String> {
+    let path = std::path::PathBuf::from(path);
+    if !is_supported_image_format(&path) {
+        return Err(format!(
+            "output file '{}' is not a supported image format (supported formats: {:?})",
+            path.display(),
+            SUPPORTED_IMAGE_FORMATS
+        ));
+    }
     Ok(path)
 }
 
